@@ -23,7 +23,6 @@ coverage
 .idea
 
 # Prisma
-prisma/migrations
 prisma/dev.db
 
 # Logs
