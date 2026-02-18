@@ -33,16 +33,16 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t $REGION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/attendance-app-be:${{ github.sha }} .
+          docker build -t $REGION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/my-app:${{ github.sha }} .
 
       - name: Push Docker image
         run: |
-          docker push $REGION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/attendance-app-be:${{ github.sha }}
+          docker push $REGION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/my-app:${{ github.sha }}
 
       - name: Deploy to Cloud Run
         run: |
           gcloud run deploy $SERVICE \
-            --image $REGION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/attendance-app-be:${{ github.sha }} \
+            --image $REGION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/my-app:${{ github.sha }} \
             --region $REGION \
             --platform managed \
             --allow-unauthenticated
