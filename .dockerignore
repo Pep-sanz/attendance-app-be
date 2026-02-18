@@ -1,0 +1,34 @@
+# Node
+node_modules
+npm-debug.log
+yarn-error.log
+pnpm-debug.log
+
+# Build output
+dist
+coverage
+
+# Environment
+.env
+.env.*
+!.env.docker
+
+# Git
+.git
+.gitignore
+
+# OS / Editor
+.DS_Store
+.vscode
+.idea
+
+# Prisma
+prisma/migrations
+prisma/dev.db
+
+# Logs
+logs
+*.log
+
+# Misc
+README.md

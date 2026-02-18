@@ -1,0 +1,268 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+////////////////////
+/// ENUMS
+////////////////////
+
+enum user_role {
+  SUPERADMIN
+  ADMIN
+  EMPLOYEE
+}
+
+enum EmployeeStatus {
+  ACTIVE
+  INACTIVE
+  RESIGNED
+}
+
+enum attendance_status {
+  PRESENT
+  LATE
+  ABSENT
+}
+
+enum RequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum WrokingType {
+  PROBATION
+  PERMANENT
+  CONTRACT
+}
+
+enum ShiftType {
+  FIXED
+  FLEXIBLE
+}
+
+////////////////////
+/// MODELS
+////////////////////
+
+model Company {
+  id        String  @id @default(uuid())
+  name      String
+  phone     String
+  address   String?
+  latitude  Int
+  longitude Int
+  is_active Boolean @default(true)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  users           User[]
+  employees       Employee[]
+  shifts          Shift[]
+  leaveCategories LeaveCategory[]
+  divisions       Division[]
+}
+
+model User {
+  id         String    @id @default(uuid())
+  company_id String?
+  email      String    @unique
+  photo      String?
+  password   String
+  name       String
+  is_active  Boolean   @default(true)
+  role       user_role
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  company        Company?       @relation(fields: [company_id], references: [id])
+  employee       Employee?
+  attendances    Attendance[]
+  leave_requests LeaveRequest[]
+  resignation    Resignation?
+}
+
+model Employee {
+  id         String @id @default(uuid())
+  user_id    String @unique
+  company_id String
+
+  employee_code String? @unique
+
+  // Personal Information
+  phone           String?
+  identity_number String?
+  place_of_birth  String
+  date_of_birth   DateTime
+  gender          String? // "MALE", "FEMALE"
+  marital_status  String? // "SINGLE", "MARRIED", etc.
+  address         String?
+
+  shift_id String?
+
+  // Emergency Contact
+  emergency_name  String?
+  emergency_phone String?
+
+  // Employment Information
+  position          String?
+  join_date         DateTime?
+  contract_end_date DateTime?
+  working_type      WrokingType    @default(PROBATION)
+  status            EmployeeStatus @default(ACTIVE)
+  division_id       String?
+
+  // Payroll Information
+  base_salary      Decimal? @db.Decimal(10, 2)
+  bank_name        String?
+  bank_account     String?
+  bank_holder_name String?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  /// Relations
+  user                  User                   @relation(fields: [user_id], references: [id])
+  company               Company                @relation(fields: [company_id], references: [id])
+  shift                 Shift?                 @relation(fields: [shift_id], references: [id])
+  division              Division?              @relation(fields: [division_id], references: [id])
+  employeeLeaveBalances EmployeeLeaveBalance[]
+
+  @@unique([company_id, employee_code])
+  @@unique([company_id, identity_number])
+}
+
+model Attendance {
+  id             String            @id @default(uuid())
+  user_id        String
+  date           DateTime
+  check_in       DateTime?
+  check_out      DateTime?
+  status         attendance_status
+  work_minutes   Int?
+  distance_meter Int?
+  shift_id       String?
+
+  check_in_lat Int?
+  check_in_lng Int?
+
+  check_out_lat Int?
+  check_out_lng Int?
+
+  created_at DateTime @default(now())
+
+  user  User   @relation(fields: [user_id], references: [id])
+  shift Shift? @relation(fields: [shift_id], references: [id])
+
+  @@unique([user_id, date])
+}
+
+model LeaveCategory {
+  id          String   @id @default(uuid())
+  company_id  String
+  name        String
+  description String?
+  quota_days  Int
+  expires_at  DateTime
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  company               Company                @relation(fields: [company_id], references: [id])
+  leaveRequests         LeaveRequest[]
+  employeeLeaveBalances EmployeeLeaveBalance[]
+}
+
+model LeaveRequest {
+  id          String @id @default(uuid())
+  user_id     String
+  category_id String
+
+  start_date  DateTime
+  end_date    DateTime
+  reason      String?
+  approved_by String?
+  status      RequestStatus @default(PENDING)
+
+  approved_at DateTime?
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+
+  user     User          @relation(fields: [user_id], references: [id])
+  category LeaveCategory @relation(fields: [category_id], references: [id])
+}
+
+model EmployeeLeaveBalance {
+  id             String @id @default(uuid())
+  employee_id    String
+  category_id    String
+  remaining_days Int
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  employee Employee      @relation(fields: [employee_id], references: [id])
+  category LeaveCategory @relation(fields: [category_id], references: [id])
+
+  @@unique([employee_id, category_id])
+}
+
+model Resignation {
+  id                String        @id @default(uuid())
+  user_id           String        @unique
+  last_working_date DateTime
+  reason            String?
+  status            RequestStatus @default(PENDING)
+
+  created_at DateTime @default(now())
+
+  user User @relation(fields: [user_id], references: [id])
+}
+
+model Division {
+  id          String  @id @default(uuid())
+  company_id  String
+  name        String
+  description String?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  company   Company    @relation(fields: [company_id], references: [id])
+  employees Employee[]
+
+  @@unique([company_id, name])
+}
+
+model Shift {
+  id         String @id @default(uuid())
+  company_id String
+
+  name       String
+  shift_type ShiftType @default(FIXED)
+
+  start_time String
+  end_time   String
+
+  break_start String?
+  break_end   String?
+
+  late_tolerance Int     @default(0)
+  is_active      Boolean @default(true)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  company     Company      @relation(fields: [company_id], references: [id])
+  employees   Employee[]
+  attendances Attendance[]
+
+  @@index([company_id])
+}
