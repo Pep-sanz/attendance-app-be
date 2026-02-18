@@ -7,9 +7,9 @@ on:
 
 env:
   PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
-  REGION: asia-southeast1
-  REPOSITORY: my-app-repo
-  SERVICE: attendance-app-service
+  REGION: asia-southeast2
+  REPOSITORY: attendance-app-repo
+  SERVICE: attendance-app-be
 
 jobs:
   deploy:
